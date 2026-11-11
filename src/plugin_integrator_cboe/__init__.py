@@ -9,6 +9,11 @@ liminal_libs.sources.plugin.FeedPlugin; what a feed declares its class attribute
 methods). The feeds share `CboeFeed`, a keyless public feed's plugin (liminal_libs.sources.archive:
 PublicFeedPlugin). Its version is its distribution's (pyproject.toml); it relies on the contract and
 nothing of the app outside it (docs/ARCHITECTURE.md in liminal-charts: "Providers are plugins").
+
+Plugin API 2.2 (liminal-libs 1.49.0; the user, 2026-11-11: "each plugin should reflect the the API its attached to, and
+present links that provide documentation"): each feed's `apis`, what it talks to (apis.py: Cboe's index history files
+for `cboe`, the Cboe Futures Exchange's historical data for `cboefutures`, with Cboe's pages, every part of each and the
+files it asks for among the rest), and `api_facts()`, what its client learned while it ran (facts.py), asking nothing.
 """
 from __future__ import annotations
 
@@ -27,6 +32,9 @@ from liminal_libs.sessions import MarketCalendar
 from liminal_libs.sources.archive import ET, Archive, PublicFeedPlugin, bounds, ms
 from liminal_libs.sources.http import PublicClient
 from liminal_libs.sources.registry import public_client
+
+from .apis import FUTURES_FILES, INDEX_FILES
+from .facts import NOTES
 
 BASE_URL = "https://cdn-api.cboe.com/api/global/us_indices/daily_prices"
 # its plan and caps: a public file server with no published limits, one file an index
@@ -226,14 +234,27 @@ class CboeFuturesSource(Archive):
 
 
 class CboeFeed(PublicFeedPlugin):
-    """What the plugin's two feeds are alike (plugin API 2.0): a keyless public feed's plugin, its
+    """What the plugin's two feeds are alike (plugin API 2.2): a keyless public feed's plugin, its
     source (`source_class`) on the contract's public client at its `base_url`, its plan and caps its
     fixed `tier`, `per_run` and `per_day`; Cboe's own files (`kind` official), one file a symbol
-    holding its whole history (`per_request`). Each feed declares the rest of its own."""
+    holding its whole history (`per_request`); its client noted under its API (`apis`, one each) for
+    `api_facts`. Each feed declares the rest of its own."""
 
-    api = "2.0"  # the contract it needs (the class contract; sources.http, sources.archive, part_of); its version: the distribution's
+    api = "2.2"  # the contract it needs (the class contract; sources.http, sources.archive, part_of; 2.2: apis); its version: the distribution's
     kind = "official"
     per_request = {"day": None}  # one file per symbol (an index, a contract): its whole history
+
+    def build(self, settings, request_budget):
+        """The public feed's own build (PublicFeedPlugin.build), its client noted under the feed's API (held
+        weakly: api_facts reads what it learned)."""
+        source = super().build(settings, request_budget)
+        NOTES.note(self.apis[0].name, source.client)
+        return source
+
+    def api_facts(self):
+        """What its client learned of its Cboe files while it ran (the requests made, the last answer's clock, the
+        last file's change), from what this process already holds: nothing is asked (facts.py)."""
+        return NOTES.facts(a.name for a in self.apis)
 
 
 class CboeIndices(CboeFeed):
@@ -251,6 +272,7 @@ class CboeIndices(CboeFeed):
     per_run, per_day = PER_RUN, PER_DAY
     limits = "none published (a public file server)"
     provides = {"index": ("day",)}
+    apis = (INDEX_FILES,)  # what it attaches to (plugin API 2.2): Cboe's index history files (apis.py)
 
     def markets(self, settings):
         return {"index": "index"}
@@ -280,11 +302,15 @@ class CboeFutures(CboeFeed):
     # too): a contract's day comes with its settlement after the session, so its day bars are expected
     # once the session is over, like a stock's on an end-of-day plan
     delays = {"cboe-futures": {"future": Delay("eod")}}
+    apis = (FUTURES_FILES,)  # what it attaches to (plugin API 2.2): the Cboe Futures Exchange's historical data (apis.py)
 
     def build(self, settings, request_budget):
         """Its source on Cboe's public client: the window and the day cap are held under the account its
-        requests count against (`account`, the indices' feed: one public file server, one window)."""
-        return self.source_class(public_client(self.account, self.base_url, settings, request_budget))
+        requests count against (`account`, the indices' feed: one public file server, one window). Its
+        client is noted under its API (held weakly: api_facts reads what it learned)."""
+        source = self.source_class(public_client(self.account, self.base_url, settings, request_budget))
+        NOTES.note(self.apis[0].name, source.client)
+        return source
 
     def markets(self, settings):
         return {"future": "cfe"}

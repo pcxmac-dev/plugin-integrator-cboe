@@ -108,12 +108,12 @@ def test_the_app_loads_its_two_feeds_from_this_package_with_its_own_version():
         p = provider(name)
         assert p is not None, dict(registry.errors())
         assert p.origin in {"package: plugin-integrator-cboe (plugin_integrator_cboe)", "plugins/plugin-integrator-cboe (plugin_integrator_cboe)"}  # its package, or its checkout in the workspace\'s plugin directory
-        assert p.version == version("plugin-integrator-cboe") and p.api == "2.0"
+        assert p.version == version("plugin-integrator-cboe") and p.api == "2.2"
         assert registry.api_refusal(p.api) is None
     assert plugin_integrator_cboe.INDICES.version == "" and plugin_integrator_cboe.FUTURES.version == ""
     assert not [why for where, why in registry.errors() if "cboe" in where or "cboe" in why]
     row = {r["name"]: r for r in registry.menu()}["cboe"]
-    assert (row["version"], row["api"]) == (version("plugin-integrator-cboe"), "2.0")
+    assert (row["version"], row["api"]) == (version("plugin-integrator-cboe"), "2.2")
     assert registry.plugin_feeds("cboe") == ["cboe", "cboefutures"] and registry.plugin_of("cboefutures") == "cboe"
 
 
@@ -136,17 +136,17 @@ def test_it_keeps_the_facts_it_had_built_in():
     assert (provider("cboefutures").part_of, provider("cboefutures").account) == ("cboe", "cboe")
 
 
-def test_each_feed_is_a_class_on_plugin_api_2_0():
-    """The two feeds are instances of the module's classes (plugin API 2.0, liminal-libs 1.3.0): CboeFeed holds
+def test_each_feed_is_a_class_on_plugin_api_2_2():
+    """The two feeds are instances of the module's classes (plugin API 2.2, liminal-libs 1.49.0): CboeFeed holds
     what both declare alike, each feed what is its own; the registry loads them as those classes."""
     assert isinstance(plugin_integrator_cboe.INDICES, plugin_integrator_cboe.CboeIndices)
     assert isinstance(plugin_integrator_cboe.FUTURES, plugin_integrator_cboe.CboeFutures)
     for p in plugin_integrator_cboe.PLUGINS:
         assert isinstance(p, plugin_integrator_cboe.CboeFeed) and isinstance(p, PublicFeedPlugin) and isinstance(p, FeedPlugin)
-        assert p.api == "2.0" and not p.is_record and p.kind == "official" and p.request_bars("day") is None
+        assert p.api == "2.2" and not p.is_record and p.kind == "official" and p.request_bars("day") is None
     loaded = registry.reload()
-    assert type(loaded["cboe"]) is plugin_integrator_cboe.CboeIndices and loaded["cboe"].api == "2.0"
-    assert type(loaded["cboefutures"]) is plugin_integrator_cboe.CboeFutures and loaded["cboefutures"].api == "2.0"
+    assert type(loaded["cboe"]) is plugin_integrator_cboe.CboeIndices and loaded["cboe"].api == "2.2"
+    assert type(loaded["cboefutures"]) is plugin_integrator_cboe.CboeFutures and loaded["cboefutures"].api == "2.2"
     # the hooks each gives: its build (the indices' the public feed's own, the futures' on Cboe's account), its
     # markets and what it carries; the rest the contract's defaults (its fixed tier and caps, the plan's rate)
     for name in ("cboe", "cboefutures"):
