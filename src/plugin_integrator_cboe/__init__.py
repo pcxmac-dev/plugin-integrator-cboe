@@ -60,12 +60,18 @@ def third_friday(year: int, month: int) -> date:
 def vx_expiration(month: date) -> date:
     """A VX contract's final settlement date (Cboe's rule): the Wednesday 30 days before the third
     Friday of the month after the contract month; when that Friday is a holiday, 30 days before the
-    business day before it (March 2025: Good Friday was April 18, so Tuesday March 18)."""
+    business day before it (March 2025: Good Friday was April 18, so Tuesday March 18); and when that
+    Wednesday is itself a holiday, the business day before it (June 2024: Juneteenth, so Tuesday June 18)."""
     y, m = (month.year + 1, 1) if month.month == 12 else (month.year, month.month + 1)
     friday = third_friday(y, m)
     while not CALENDAR.is_trading_day(friday):
         friday -= timedelta(days=1)
-    return friday - timedelta(days=30)
+    # the review of 2026-11-21, item 26 (finding 14): the Wednesday was never checked, so a contract settling on a
+    # Wednesday holiday (Juneteenth 2024 and 2030) was asked for under a date Cboe never named its file by
+    settlement = friday - timedelta(days=30)
+    while not CALENDAR.is_trading_day(settlement):
+        settlement -= timedelta(days=1)
+    return settlement
 
 
 def contract_of(ticker: str) -> tuple[str, str] | None:

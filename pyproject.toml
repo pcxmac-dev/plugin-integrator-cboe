@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "plugin-integrator-cboe"
-version = "0.3.0"  # the plugin's own release (CHANGELOG.md); the app shows it on the Plugins view
+version = "0.3.1"  # the plugin's own release (CHANGELOG.md); the app shows it on the Plugins view
 description = "Cboe for Liminal: daily history of Cboe's indices (VIX from 1990) and of VIX futures (from 2004), no key."
 readme = "README.md"
 requires-python = ">=3.10"

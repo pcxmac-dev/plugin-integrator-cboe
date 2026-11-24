@@ -18,7 +18,7 @@ from liminal_libs.sources.registry import FeedPlugin
 from liminal_libs.symbols import resolve
 
 import plugin_integrator_cboe
-from plugin_integrator_cboe import (FUTURES_PER_DAY, FUTURES_PER_RUN, FUTURES_TIER, PER_DAY, PER_RUN, TIER, CboeFuturesSource,
+from plugin_integrator_cboe import (CALENDAR, FUTURES_PER_DAY, FUTURES_PER_RUN, FUTURES_TIER, PER_DAY, PER_RUN, TIER, CboeFuturesSource,
                                  CboeSource, read_contract, vx_expiration)
 
 from .conftest import FakeResponse, FakeSession
@@ -99,6 +99,15 @@ def test_vx_settlement_dates_follow_cboes_rule():
     assert vx_expiration(date(2026, 12, 1)) == date(2026, 12, 16)  # January 15 2027
     assert vx_expiration(date(2025, 3, 1)) == date(2025, 3, 18)  # Good Friday 2025 was April's third Friday: Thursday 17th, a Tuesday
     assert vx_expiration(date(2026, 1, 1)) == date(2026, 1, 21)  # February 20 2026
+
+
+def test_vx_settlement_on_a_wednesday_holiday_is_the_business_day_before():
+    # the review of 2026-11-21, item 26 (finding 14): July 19 2024 less 30 days is Juneteenth; Cboe settled on the 18th
+    assert vx_expiration(date(2024, 6, 1)) == date(2024, 6, 18)
+    for y in range(2004, 2031):
+        for m in range(1, 13):
+            d = vx_expiration(date(y, m, 1))
+            assert CALENDAR.is_trading_day(d), d
 
 
 def test_the_app_loads_its_two_feeds_from_this_package_with_its_own_version():

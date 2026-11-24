@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.1 (2026-11-24)
+
+A VX contract whose final settlement Wednesday is a holiday settles on the business day before it, as Cboe's rule says
+(the review of 2026-11-21, item 26, finding 14): `vx_expiration` moved the third Friday back for a holiday but never the
+Wednesday 30 days before it, so June 2024's contract (Juneteenth, Wednesday 2024-06-19) was asked for under a date Cboe
+never named its file by and was never fetched; it is now Tuesday 2024-06-18 (and June 2030 likewise). Every month from
+2004 to 2030 now settles on a trading day by the plugin's own calendar.
+
 ## 0.3.0 (2026-11-11)
 
 Its APIs on its page (plugin API 2.2, liminal-libs 1.49.0; the user: "each plugin should reflect the the API its attached
